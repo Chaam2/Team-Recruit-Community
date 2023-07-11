@@ -2,9 +2,9 @@
 
 ## 💜 데모사이트
 
-![image](/uploads/22c167075cc97d3baa7d5e1014f76722/image.png)
+![01](https://github.com/Chaam2/Team-Recruit-Community/assets/126763111/68378e8c-e7fa-4936-91db-2146a97f41be)
 
-💡 http://kdt-sw-4-team07.elicecoding.com/
+💡 https://moppe.co.kr/
 
 **테스트 계정**
   - 아이디 : admin@gmail.com
@@ -94,7 +94,7 @@
 
 ## 💜 기술스택
 
-![image](/uploads/08cbf3ec37a90f1bd57c1dd5311c9d8e/image.png)
+![기술스택](https://github.com/Chaam2/Team-Recruit-Community/assets/126763111/cde02215-e2a9-4c29-8ea2-143e690fb6d8)
 
 ## 💜 API 문서
 
