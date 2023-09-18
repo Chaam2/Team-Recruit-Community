@@ -136,9 +136,9 @@ export async function deleteComment<T extends 'project' | 'portfolio'>(
 // 모든 프로젝트 리스트 불러오기
 export async function getProjects(
   cate: string = 'all',
-  recruiting: boolean | string = 'all',
-  keyword: false | string = '',
-  page: number = 1
+  recruiting: boolean | string,
+  keyword: false | string = 'false',
+  page: number
 ): Promise<{
   message: string;
   data: { pageSize: number; pagenatedProjects: ProjectType.TypeProjectList[] };
