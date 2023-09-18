@@ -135,17 +135,16 @@ export async function deleteComment<T extends 'project' | 'portfolio'>(
 
 // 모든 프로젝트 리스트 불러오기
 export async function getProjects(
-  cate: string,
-  recruiting: boolean | string,
-  keyword: false | string,
-  page: number
+  cate: string = 'all',
+  recruiting: boolean | string = 'all',
+  keyword: false | string = '',
+  page: number = 1
 ): Promise<{
   message: string;
   data: { pageSize: number; pagenatedProjects: ProjectType.TypeProjectList[] };
 }> {
   const params = `projects`;
-  const newKeyword = keyword === '' ? 'false' : keyword;
-  const query = `cate=${cate}&recruiting=${recruiting}&keyword=${newKeyword}&page=${page}`;
+  const query = `cate=${cate}&recruiting=${recruiting}&keyword=${keyword}&page=${page}`;
   return await Api.get(API_KEY, params, true, query);
 }
 
