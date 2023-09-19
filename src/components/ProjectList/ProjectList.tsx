@@ -14,7 +14,7 @@ function ProjectList({ projectList, innerRef }: ProjectListProps) {
 
   const {
     page: { moreData },
-    load: { isLoading },
+    load: { isLoading, isError },
     data,
   } = projectList;
 
@@ -27,9 +27,13 @@ function ProjectList({ projectList, innerRef }: ProjectListProps) {
       {isLoading && <LoadingProject />}
       {!isLoading && data.length > 0 ? (
         data.map((project) => <ProjectItem projectData={project} key={project.project_id} />)
-      ) : !isLoading && data.length === 0 ? (
+      ) : !isLoading && !isError && data.length === 0 ? (
         <li className={styles.noneContentContainer}>
           <p className={styles.noneContent}>게시글이 없습니다 :(</p>
+        </li>
+      ) : !isLoading && isError ? (
+        <li className={styles.noneContentContainer}>
+          <p className={styles.noneContent}>목록을 불러오는데 실패했습니다. :(</p>
         </li>
       ) : undefined}
       {moreData && <LoadingProject innerRef={innerRef} />}

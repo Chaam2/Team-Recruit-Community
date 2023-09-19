@@ -1,4 +1,4 @@
-import { RefObject, useEffect } from 'react';
+import { RefObject } from 'react';
 import Category from '../../components/ProjectList/Category';
 import ProjectList from '../../components/ProjectList/ProjectList';
 import ProjectPostButton from '../../components/common/ProjectPostButton';
@@ -23,17 +23,11 @@ function ProjectListMain() {
     handleRecruitingSelect,
   } = useProjectList();
 
-  const {
-    load: { isError },
-  } = projectList;
-
   const { selectedCategory, searchKeyword, recruitingMode } = projectListFilter;
 
   const target: RefObject<HTMLElement | HTMLLIElement> = useInfiniteScroll(async () => {
     await getNextProjectList();
   });
-
-  isError && <Error />;
 
   return (
     <div className={!isMobile ? `${styles.container}` : `${styles.mobileContainer}`}>
