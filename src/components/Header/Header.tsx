@@ -13,13 +13,14 @@ import ToggleDarkModeButton from '../common/DarkMode/ToggleDarkMode';
 import DefaultUserImg from '../../assets/DefaultUser.png';
 import Logo from '../../assets/Logo.png';
 import { themeAtom } from '../../recoil/themeState';
-import { projectListAtom } from '../../recoil/projectListFilter';
 import HamburgerMenu from './HamburgerMenu';
 import { RxHamburgerMenu } from 'react-icons/rx';
+import useProjectList from '../../hooks/controllers/useProjectList';
 
 function Header() {
   const isMobile = useMediaQuery({ query: '(max-width:768px)' });
-  const resetProjectListAtom = useResetRecoilState(projectListAtom);
+
+  const { resetState: resetProjectList } = useProjectList();
   const loginData = useRecoilValue(loginAtom);
   const navigate = useNavigate();
   const [modalOpen, setModalOpen] = useState(false);
@@ -67,9 +68,7 @@ function Header() {
                 className={({ isActive }) => (isActive ? styles.active : '')}
                 onClick={() => {
                   handleNavLinkClick();
-                  if (window.location.pathname !== ROUTES.PROJECT_LIST) {
-                    resetProjectListAtom();
-                  }
+                  resetProjectList();
                 }}
               >
                 <span>멤버 모집</span>
