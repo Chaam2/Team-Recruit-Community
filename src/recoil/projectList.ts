@@ -1,13 +1,7 @@
-import { TypeProjectList } from '@/interfaces/Project.interface';
+import { IProjectList, IProjectListFilter } from '../interfaces/Project.interface';
 import { atom } from 'recoil';
 
-export interface ProjectListFilter {
-  selectedCategory: string;
-  searchKeyword: string;
-  recruitingMode: string;
-}
-
-export const projectListFilterState = atom<ProjectListFilter>({
+export const projectListFilterState = atom<IProjectListFilter>({
   key: 'ProjectListFilter',
   default: {
     selectedCategory: 'all',
@@ -16,20 +10,11 @@ export const projectListFilterState = atom<ProjectListFilter>({
   },
 });
 
-export interface ProjectList {
-  data: TypeProjectList[];
-  page: { moreData: boolean; currentPage: number; size: number };
-  load: {
-    isLoading: boolean;
-    isError: boolean;
-  };
-}
-
-export const projectListState = atom<ProjectList>({
+export const projectListState = atom<IProjectList>({
   key: 'ProjectList',
   default: {
     data: [],
-    page: { moreData: false, currentPage: 0, size: 0 },
+    page: { moreData: false, currentPage: 1, size: 0 },
     load: {
       isLoading: true,
       isError: false,
