@@ -3,13 +3,14 @@ import Category from '../../components/ProjectList/Category';
 import ProjectList from '../../components/ProjectList/ProjectList';
 import ProjectPostButton from '../../components/common/ProjectPostButton';
 import ProjectSearch from '../../components/ProjectList/ProjectSearch';
-import styles from './ProjectListMain.module.scss';
 import RecruitingProjectFilter from '../../components/ProjectList/RecruitingProjectFilter';
+
 import useInfiniteScroll from '../../hooks/useInfiniteScroll';
+import useProjectList from '../../hooks/controllers/useProjectList';
+
+import styles from './ProjectListMain.module.scss';
 
 import { useMediaQuery } from 'react-responsive';
-import useProjectList from '../../hooks/controllers/useProjectList';
-import Error from '../../components/common/Error';
 
 function ProjectListMain() {
   const isMobile = useMediaQuery({ query: '(max-width:768px)' });
