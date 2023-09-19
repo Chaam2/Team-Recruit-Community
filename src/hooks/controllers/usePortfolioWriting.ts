@@ -1,12 +1,15 @@
 import ROUTES from '../../constants/Routes';
-import { MAX_LENGTH } from '../../constants/PortfolioWriting';
+import { MAX_LENGTH, MIN_LENGTH } from '../../constants/PortfolioWriting';
 import { TypePortfolioDetail } from '../../interfaces/Portfolio.interface';
 import { TypeTeamProjectUser } from '../../interfaces/User.interface';
 import { selectedPostTitleState } from '../../recoil/portfolioState';
-import { useEffect, useState } from 'react';
-import { useRecoilState } from 'recoil';
+import { RefObject, useEffect, useState } from 'react';
+import { useRecoilState, useRecoilValue } from 'recoil';
 import * as fetcher from '../../apis/Fetcher';
 import { useLocation, useNavigate } from 'react-router-dom';
+import { contentWBase64Converter } from '../../utils/imageConverter';
+import { loginAtom } from '../../recoil/loginState';
+import Quill from 'quill';
 
 interface IForm {
   title: string;
@@ -18,12 +21,14 @@ interface IForm {
   thumbnailFile: File | null;
   gitHubUrl: string;
 }
+const IMG_DOMAIN = process.env.REACT_APP_DOMAIN || '';
 
 function usePortfolioWriting(publishedPostData?: TypePortfolioDetail) {
   const navigate = useNavigate();
   const location = useLocation();
   const searchParams = new URLSearchParams(location.search);
   const paramValue = searchParams.get('selectedProject');
+  const loginData = useRecoilValue(loginAtom);
 
   const isEditMode = publishedPostData?.portfolio_id;
 
@@ -40,7 +45,7 @@ function usePortfolioWriting(publishedPostData?: TypePortfolioDetail) {
     gitHubUrl: '',
   });
 
-  const { title, summary, stacks, members, thumbnailSrc, thumbnailFile, gitHubUrl } = form;
+  const { title, summary, stacks, members, thumbnailSrc, gitHubUrl } = form;
 
   const [selectedProject, setSelectedProject] = useRecoilState(selectedPostTitleState);
 
@@ -71,17 +76,6 @@ function usePortfolioWriting(publishedPostData?: TypePortfolioDetail) {
       setForm(newFormData);
     }
   }, [publishedPostData, setSelectedProject]);
-
-  // 썸네일 미리보기 src
-  useEffect(() => {
-    if (thumbnailFile) {
-      const reader = new FileReader();
-      reader.onload = () => {
-        setForm((prev) => ({ ...prev, thumbnailSrc: reader.result as string }));
-      };
-      reader.readAsDataURL(thumbnailFile);
-    }
-  }, [thumbnailFile]);
 
   useEffect(() => {
     //로컬스토리지에 postData가 있으면 savedPost 상태 저장
@@ -125,8 +119,8 @@ function usePortfolioWriting(publishedPostData?: TypePortfolioDetail) {
         ? await fetcher.patchPortfolio(publishedPostData!.portfolio_id.toString(), formData)
         : await fetcher.postPortfolio(formData);
       navigate(`${ROUTES.PORTFOLIO_DETAIL}${response.data.portfolio_id}`);
-    } catch (error: any) {
-      switch (error.message) {
+    } catch (e: any) {
+      switch (e.message) {
         case '401': {
           alert('로그인 후 이용해 주세요.');
           break;
@@ -140,7 +134,7 @@ function usePortfolioWriting(publishedPostData?: TypePortfolioDetail) {
           break;
         }
         default: {
-          alert(error.message);
+          alert(e.message);
         }
       }
     }
@@ -149,6 +143,11 @@ function usePortfolioWriting(publishedPostData?: TypePortfolioDetail) {
   const handlers = {
     selectThumbnail: (file: File) => {
       setForm((prev) => ({ ...prev, thumbnailFile: file }));
+      const reader = new FileReader();
+      reader.onload = () => {
+        setForm((prev) => ({ ...prev, thumbnailSrc: reader.result as string }));
+      };
+      reader.readAsDataURL(file);
     },
     changeTitle: (value: string) => {
       if (value.length <= MAX_LENGTH.TITLE) {
@@ -181,7 +180,7 @@ function usePortfolioWriting(publishedPostData?: TypePortfolioDetail) {
       setForm((prev) => ({ ...prev, members: newMembers }));
     },
 
-    importSavedPost: (quillRef: any) => {
+    importSavedPost: (quillRef: RefObject<Quill>) => {
       const savedPostData = localStorage.getItem('savedPortfolioPost');
       const postData = JSON.parse(savedPostData!);
       const confirm = window.confirm(
@@ -191,18 +190,17 @@ function usePortfolioWriting(publishedPostData?: TypePortfolioDetail) {
       if (confirm) {
         setSelectedProject(postData.selectedProject);
         setForm(postData);
-        // 에디터 내용 불러오기
         quillRef.current!.root.innerHTML = postData.description;
       }
     },
 
-    saveTemporary: (quillRef: any) => {
+    saveTemporary: (quillRef: RefObject<Quill>) => {
       const editorHTML = quillRef.current!.root.innerHTML;
       const isAtLeastOneFieldFilled =
         thumbnailSrc.length > 0 ||
         title.length > 0 ||
         summary.length > 0 ||
-        editorHTML.length > 15 ||
+        editorHTML.length > MIN_LENGTH.EDITOR_CONTENT ||
         gitHubUrl.length > 0 ||
         stacks.length > 0 ||
         members.length > 0;
@@ -223,6 +221,81 @@ function usePortfolioWriting(publishedPostData?: TypePortfolioDetail) {
       };
       localStorage.setItem('savedPortfolioPost', JSON.stringify(form));
       alert('임시저장 성공');
+    },
+
+    submitForm: async (
+      quillRef: RefObject<Quill>,
+      titleRef: RefObject<HTMLInputElement>,
+      summaryRef: RefObject<HTMLInputElement>,
+      thumbnailRef: RefObject<HTMLButtonElement>,
+      githubRef: RefObject<HTMLInputElement>
+    ) => {
+      const editorHTML = quillRef.current!.root.innerHTML;
+
+      const { parsedContent: parsedDesContent, convertedFiles: convertedDesFiles } =
+        await contentWBase64Converter(loginData, editorHTML, IMG_DOMAIN, {
+          maxSizeMB: 150,
+          maxWidthOrHeight: 780,
+          useWebWorker: true,
+        });
+
+      const { convertedFiles: convertedThumbnailFiles } = await contentWBase64Converter(
+        loginData,
+        thumbnailSrc,
+        IMG_DOMAIN,
+        {
+          maxSizeMB: 150,
+          maxWidthOrHeight: 780,
+          useWebWorker: true,
+        }
+      );
+
+      const convertedThumbnailFile = convertedThumbnailFiles[0];
+
+      const formData = new FormData();
+      formData.append('portfolio_img', convertedThumbnailFile as File);
+      formData.append('portfolio_title', title);
+      formData.append('portfolio_summary', summary);
+      formData.append('portfolio_github', gitHubUrl);
+      formData.append('portfolio_stacks', JSON.stringify(stacks || []));
+      formData.append('portfolio_description', parsedDesContent);
+      convertedDesFiles.length > 0 &&
+        convertedDesFiles.forEach((file) => formData.append('portfolio_img', file as File));
+      formData.append('memberIds', JSON.stringify(members.map((info) => info.user_id) || []));
+      formData.append('project_id', JSON.stringify(selectedProject.id));
+
+      const refFocusAndScroll = (
+        targetRef: RefObject<HTMLInputElement> | RefObject<HTMLButtonElement> | RefObject<Quill>
+      ) => {
+        if (targetRef.current) {
+          targetRef.current.focus();
+        }
+      };
+
+      const validationRules = [
+        { condition: !title, message: '제목을 입력해 주세요.', ref: titleRef },
+        { condition: !summary, message: '요약을 입력해 주세요.', ref: summaryRef },
+        { condition: !thumbnailSrc, message: '썸네일을 등록해 주세요.', ref: thumbnailRef },
+        {
+          condition: editorHTML.length <= MIN_LENGTH.EDITOR_CONTENT,
+          message: '내용이 너무 짧습니다.',
+          ref: quillRef,
+        },
+        {
+          condition: !gitHubUrl,
+          message: '깃허브 레포지토리 url을 입력해 주세요.',
+          ref: githubRef,
+        },
+      ];
+
+      const validationFailed = validationRules.find((rule) => rule.condition);
+
+      if (validationFailed) {
+        alert(validationFailed.message);
+        refFocusAndScroll(validationFailed.ref!);
+      } else {
+        postPortfolio(formData);
+      }
     },
   };
 
