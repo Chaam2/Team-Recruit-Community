@@ -4,8 +4,8 @@ import { useRef, useState } from 'react';
 import styles from './MemberSelectForm.module.scss';
 import UserProfileList from '../common/User/UserProfileList';
 import LengthCheck from '../ProjectWritingForm/LengthCheck';
-import { MAX_MEMBERS_LENGTH } from './PortfolioWritingForm';
 import { useMediaQuery } from 'react-responsive';
+import { MAX_LENGTH } from '../../constants/PortfolioWriting';
 
 interface MemberSelectFormProps {
   selectedUserList: TypeTeamProjectUser[];
@@ -74,7 +74,7 @@ function MemberSelectForm({
             <h4>선택 한 멤버</h4>
             <LengthCheck
               valueLength={selectedUserList ? selectedUserList.length : 0}
-              maxLength={MAX_MEMBERS_LENGTH}
+              maxLength={MAX_LENGTH.MEMBERS}
             />
           </div>
           {selectedUserList && (

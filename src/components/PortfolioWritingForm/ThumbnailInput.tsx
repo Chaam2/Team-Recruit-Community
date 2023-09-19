@@ -27,7 +27,6 @@ function ThumbnailInput({ onInputChange, imgFile, thumbnailSrc, innerRef }: Thum
         !isMobile ? `${styles.container}` : `${styles.container} ${styles.mobileContainer}`
       }
     >
-      {' '}
       <div onMouseEnter={() => onMouseHandler()} onMouseLeave={() => leaveMouseHandler()}>
         <input
           ref={fileInputRef}
