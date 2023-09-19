@@ -1,6 +1,6 @@
 import { TypeProjectList } from '../../interfaces/Project.interface';
 import styles from './ProjectList.module.scss';
-import Project from './Project';
+import ProjectItem from './ProjectItem';
 import LoadingProject from './LoadingProject';
 import { RefObject } from 'react';
 import { useMediaQuery } from 'react-responsive';
@@ -22,13 +22,7 @@ function ProjectList({ projectList, isLoading, innerRef, moreData }: ProjectList
     >
       {isLoading && <LoadingProject />}
       {!isLoading && projectList.length > 0 ? (
-        projectList.map((project, index) =>
-          index === projectList.length - 1 ? (
-            <Project projectData={project} key={project.project_id} />
-          ) : (
-            <Project projectData={project} key={project.project_id} />
-          )
-        )
+        projectList.map((project) => <ProjectItem projectData={project} key={project.project_id} />)
       ) : !isLoading && projectList.length === 0 ? (
         <li className={styles.noneContentContainer}>
           <p className={styles.noneContent}>게시글이 없습니다 :(</p>
