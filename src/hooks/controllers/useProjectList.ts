@@ -35,6 +35,7 @@ function useProjectList() {
       } catch (e) {
         setProjectList((prev) => ({
           ...prev,
+          isLoading: false,
           isError: true,
         }));
       }
