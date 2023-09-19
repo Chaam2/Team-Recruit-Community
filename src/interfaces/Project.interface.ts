@@ -120,6 +120,7 @@ export interface IProjectList {
   data: TypeProjectList[];
   page: { moreData: boolean; currentPage: number; size: number };
   load: {
+    isFirstFetched: boolean;
     isLoading: boolean;
     isError: boolean;
   };
