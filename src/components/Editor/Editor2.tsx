@@ -3,17 +3,14 @@ import styles from './Editor.module.scss';
 
 interface QuillEditorProps {
   innerRef: any;
-  onFocus: () => void;
-  onBlur: () => void;
 }
-const QuillEditor = ({ innerRef, onFocus, onBlur }: QuillEditorProps) => {
+const QuillEditor = ({ innerRef }: QuillEditorProps) => {
   return (
     <div
       ref={innerRef}
+      style={{ height: '80vh' }}
       className={`${styles.editor}`}
       id="editor-container"
-      onFocus={onFocus}
-      onBlur={onBlur}
     />
   );
 };
