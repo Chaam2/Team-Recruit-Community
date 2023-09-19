@@ -26,6 +26,7 @@ import { BsChevronRight } from 'react-icons/bs';
 import { selectedPostTitleState } from '../../recoil/portfolioState';
 import { useMediaQuery } from 'react-responsive';
 import { AiFillCloseCircle } from 'react-icons/ai';
+import { quillPortfolio } from '../../utils/quillTheme';
 
 const IMG_DOMAIN = process.env.REACT_APP_DOMAIN;
 const MAX_TITLE_LENGTH = 50;
@@ -85,23 +86,7 @@ function PortfolioWriting({ editMode, publishedPostData }: PortfolioWritingProps
 
   // 퀼에디터 추가
   useEffect(() => {
-    quillRef.current = new Quill('#editor-container', {
-      modules: {
-        ...HighlightModules,
-        toolbar: [
-          [{ header: [1, 2, 3, 4, 5, 6, false] }],
-          ['bold', 'italic', 'underline', 'strike'],
-          [{ list: 'ordered' }, { list: 'bullet' }],
-          [{ color: [] }, { background: [] }],
-          ['link', { 'code-block': 'highlight' }],
-          ['image'],
-          [{ imageDrop: true, imagePaste: true }],
-        ],
-      },
-      placeholder: '내용을 입력하세요...',
-      theme: 'snow',
-    });
-
+    quillRef.current = new Quill('#editor-container', quillPortfolio);
     const codeBlockElements = document.querySelectorAll('.ql-syntax');
     codeBlockElements.forEach((element) => {
       element.classList.add('code-block');
