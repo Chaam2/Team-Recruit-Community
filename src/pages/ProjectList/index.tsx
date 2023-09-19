@@ -1,5 +1,4 @@
-import { RefObject, useCallback, useEffect, useRef, useState } from 'react';
-import { getProjects } from '../../apis/Fetcher';
+import { RefObject, useEffect } from 'react';
 import Category from '../../components/ProjectList/Category';
 import ProjectList from '../../components/ProjectList/ProjectList';
 import ProjectPostButton from '../../components/common/ProjectPostButton';
@@ -7,192 +6,92 @@ import ProjectSearch from '../../components/ProjectList/ProjectSearch';
 import styles from './ProjectListMain.module.scss';
 import RecruitingProjectFilter from '../../components/ProjectList/RecruitingProjectFilter';
 import useInfiniteScroll from '../../hooks/useInfiniteScroll';
-import { useRecoilState, useSetRecoilState } from 'recoil';
-import { classificationState } from '../../recoil/projectState';
-import { projectListAtom } from '../../recoil/projectListFilter';
+import { useRecoilState } from 'recoil';
+
 import { useMediaQuery } from 'react-responsive';
+import useProjectList from '../../hooks/controllers/useProjectList';
+import { projectListFilterState } from '../../recoil/projectList';
+import useDebounce from '../../hooks/useDebounce';
+
+const scrollToTop = () => {
+  window.scrollTo(0, 0);
+};
 
 function ProjectListMain() {
   const isMobile = useMediaQuery({ query: '(max-width:768px)' });
 
-  const [projectListState, setProjectListState] = useRecoilState(projectListAtom);
-  const setClassification = useSetRecoilState(classificationState);
+  const debounce = useDebounce();
 
-  const [showSearchComponent, setShowSearchComponent] = useState(true);
+  const { projectList, getProjectList, getNextProjectList } = useProjectList();
+  const {
+    data,
+    load: { isLoading, isError },
+    page: { moreData, currentPage },
+  } = projectList;
 
-  // 검색 스크롤
-  // const scrollTimerRef = useRef<any>(null);
+  const [projectListFilter, setProjectListFilter] = useRecoilState(projectListFilterState);
 
-  // // 스크롤을 내리면 상태 false
-  // // 스크롤을 멈추면 상태 true
-
-  // useEffect(() => {
-  //   const handleScroll = () => {
-  //     setShowSearchComponent(false);
-  //     clearTimeout(scrollTimerRef.current);
-  //     scrollTimerRef.current = setTimeout(() => {
-  //       setShowSearchComponent(true);
-  //     }, 500);
-  //   };
-
-  //   window.addEventListener('scroll', handleScroll);
-
-  //   return () => {
-  //     window.removeEventListener('scroll', handleScroll);
-  //   };
-  // }, []);
-
-  const getProjectListData = useCallback(
-    async (nextPage: number): Promise<void> => {
-      const { projectList, selectedCategory, keywordValue, recruitingFilter } = projectListState;
-
-      try {
-        const response = await getProjects(
-          selectedCategory,
-          recruitingFilter,
-          keywordValue,
-          nextPage
-        );
-        const { pagenatedProjects, pageSize } = response.data;
-        const updatedProjectList =
-          nextPage > 1 ? [...projectList, ...pagenatedProjects] : pagenatedProjects;
-
-        setProjectListState((prevState) => ({
-          ...prevState,
-          isLoading: false,
-          projectList: updatedProjectList,
-          pageSize: pageSize,
-          moreData: pageSize > nextPage,
-        }));
-      } catch (error: any) {
-        if (error.message === '404') {
-          setProjectListState((prevState) => ({
-            ...prevState,
-            isLoading: false,
-            projectList: [],
-            moreData: false,
-          }));
-        }
-      }
-      // finally {
-      //   setIsLoading(false);
-      // }
-    },
-    [
-      projectListState.selectedCategory,
-      projectListState.recruitingFilter,
-      projectListState.keywordValue,
-      projectListState.pageCount,
-      projectListState.pageSize,
-    ]
-  );
-
-  const target: RefObject<HTMLElement | HTMLLIElement> = useInfiniteScroll(
-    async (entry, observer) => {
-      //토탈 페이지 수의 페이지까지만 다음 페이지 데이터 업데이트하기
-      if (projectListState.pageSize > projectListState.pageCount) {
-        await getProjectListData(projectListState.pageCount + 1);
-        setProjectListState((prev) => ({ ...prev, pageCount: prev.pageCount + 1 }));
-      }
-    }
-  );
+  const { selectedCategory, searchKeyword, recruitingMode } = projectListFilter;
 
   useEffect(() => {
-    const { isFirstFetch, isRefetch } = projectListState;
-    if (isRefetch) {
-      setProjectListState((prevState) => ({
-        ...prevState,
-        isRefetch: false,
-      }));
-    }
-    if (isFirstFetch && !isRefetch) {
-      window.scrollTo(0, 0);
-      setClassification('/');
-      setProjectListState((prevState) => ({
-        ...prevState,
-        isFirstFetch: false,
-      }));
-      getProjectListData(1);
-    }
-    // return () => {
-    //   resetProjectListAtom();
-    // };
-  }, []);
+    getProjectList();
+  }, [getProjectList, setProjectListFilter]);
 
-  useEffect(() => {
-    const { isFirstFetch, isRefetch } = projectListState;
-    if (!isFirstFetch && !isRefetch) {
-      window.scroll(0, 0);
-      getProjectListData(1);
-    }
-  }, [projectListState.selectedCategory, projectListState.recruitingFilter]);
+  const target: RefObject<HTMLElement | HTMLLIElement> = useInfiniteScroll(async () => {
+    await getNextProjectList(selectedCategory, recruitingMode, searchKeyword, currentPage);
+  });
 
-  useEffect(() => {
-    const { isFirstFetch, isRefetch } = projectListState;
-    if (!isFirstFetch && !isRefetch) {
-      const delayDebounceFn = setTimeout(() => {
-        window.scroll(0, 0);
-        getProjectListData(1);
-      }, 700); // 디바운스 타임 설정
-      return () => clearTimeout(delayDebounceFn);
-    }
-  }, [projectListState.keywordValue]);
-
-  const handleCategoryClick = async (key: string) => {
-    setProjectListState((prevState) => ({
-      ...prevState,
-      selectedCategory: key,
-      keywordValue: '',
-      pageCount: 1,
-      moreData: true,
+  const handleCategoryClick = async (cate: string) => {
+    setProjectListFilter((prev) => ({
+      ...prev,
+      selectedCategory: cate,
+      searchKeyword: '',
     }));
+    getProjectList(selectedCategory, recruitingMode, searchKeyword);
+    scrollToTop();
   };
 
-  const handleSearchChange = (keyword: string) => {
-    setProjectListState((prevState) => ({
-      ...prevState,
+  const handleSearchChange = (searchKeyword: string) => {
+    setProjectListFilter((prev) => ({
+      ...prev,
       selectedCategory: 'all',
-      keywordValue: keyword,
-      pageCount: 1,
-      moreData: true,
+      searchKeyword: searchKeyword,
     }));
+    debounce(() => {
+      getProjectList(undefined, recruitingMode, searchKeyword);
+      scrollToTop();
+    }, 500);
   };
 
-  const handleRecruitingSelect = (value: string) => {
-    setProjectListState((prevState) => ({
+  const handleRecruitingSelect = (recruitingMode: string) => {
+    setProjectListFilter((prevState) => ({
       ...prevState,
-      recruitingFilter: value,
-      pageCount: 1,
-      moreData: true,
+      recruitingMode: recruitingMode,
     }));
+    getProjectList(selectedCategory, recruitingMode, searchKeyword);
+    scrollToTop();
   };
 
   return (
     <div className={!isMobile ? `${styles.container}` : `${styles.mobileContainer}`}>
       <div className={styles.leftContainer}>
         <div className={styles.leftContentContainer}>
-          <Category
-            selectedCategory={projectListState.selectedCategory}
-            handleClick={handleCategoryClick}
-          />
+          <Category selectedCategory={selectedCategory} handleClick={handleCategoryClick} />
           {!isMobile && <ProjectPostButton />}
         </div>
       </div>
       <div className={styles.rightContainer}>
         <div
           className={styles.searchContainer}
-          style={(isMobile && !showSearchComponent && { display: 'none' }) || { display: '' }}
+          style={(isMobile && { display: 'none' }) || { display: '' }}
         >
-          <ProjectSearch handleChange={handleSearchChange} value={projectListState.keywordValue} />
-          <RecruitingProjectFilter
-            value={projectListState.recruitingFilter}
-            onChange={handleRecruitingSelect}
-          />
+          <ProjectSearch handleChange={handleSearchChange} value={searchKeyword} />
+          <RecruitingProjectFilter value={recruitingMode} onChange={handleRecruitingSelect} />
         </div>
         <ProjectList
-          projectList={projectListState.projectList}
-          isLoading={projectListState.isLoading}
-          moreData={projectListState.moreData}
+          projectList={data}
+          isLoading={isLoading}
+          moreData={moreData}
           innerRef={target}
         />
       </div>
