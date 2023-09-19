@@ -4,3 +4,7 @@ export const MAX_LENGTH = {
   MEMBERS: 10,
   GITHUB_URL: 100,
 };
+
+export const MIN_LENGTH = {
+  EDITOR_CONTENT: 15,
+};
