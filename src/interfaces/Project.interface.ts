@@ -109,3 +109,18 @@ export type TypeProjectPost = Pick<
 export type TypeUserProjectPosts = TypeProjectList[];
 
 export type TypeCompleteProjects = Pick<Project, 'project_id' | 'project_title'>;
+
+export interface IProjectListFilter {
+  selectedCategory: string;
+  searchKeyword: string;
+  recruitingMode: string;
+}
+
+export interface IProjectList {
+  data: TypeProjectList[];
+  page: { moreData: boolean; currentPage: number; size: number };
+  load: {
+    isLoading: boolean;
+    isError: boolean;
+  };
+}
