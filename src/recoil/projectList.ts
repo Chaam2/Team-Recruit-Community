@@ -16,6 +16,7 @@ export const projectListState = atom<IProjectList>({
     data: [],
     page: { moreData: false, currentPage: 1, size: 0 },
     load: {
+      isFirstFetched: false,
       isLoading: true,
       isError: false,
     },
