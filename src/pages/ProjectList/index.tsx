@@ -17,7 +17,6 @@ function ProjectListMain() {
   const {
     projectList,
     projectListFilter,
-    getProjectList,
     getNextProjectList,
     handleCategoryClick,
     handleSearchChange,
@@ -29,10 +28,6 @@ function ProjectListMain() {
   } = projectList;
 
   const { selectedCategory, searchKeyword, recruitingMode } = projectListFilter;
-
-  useEffect(() => {
-    getProjectList();
-  }, [getProjectList]);
 
   const target: RefObject<HTMLElement | HTMLLIElement> = useInfiniteScroll(async () => {
     await getNextProjectList();

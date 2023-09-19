@@ -1,4 +1,4 @@
-import { useCallback } from 'react';
+import { useCallback, useEffect } from 'react';
 import * as fetcher from '../../apis/Fetcher';
 import { projectListFilterState, projectListState } from '../../recoil/projectList';
 import { useRecoilState } from 'recoil';
@@ -27,11 +27,11 @@ function useProjectList() {
       try {
         const res = await fetcher.getProjects(cate, recruiting, keyword, page);
         const { pageSize, pagenatedProjects } = res.data;
-        setProjectList((prev) => ({
+        setProjectList({
           data: pagenatedProjects,
           page: { moreData: page < pageSize, currentPage: page, size: pageSize },
           load: { isLoading: false, isError: false },
-        }));
+        });
       } catch (e) {
         setProjectList((prev) => ({
           ...prev,
@@ -41,6 +41,10 @@ function useProjectList() {
     },
     [setProjectList]
   );
+
+  useEffect(() => {
+    getProjectList();
+  }, [getProjectList]);
 
   const getNextProjectList = useCallback(async () => {
     const nextPage = projectList.page.currentPage + 1;
