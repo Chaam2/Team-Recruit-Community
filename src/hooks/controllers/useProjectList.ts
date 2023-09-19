@@ -1,7 +1,7 @@
 import { useCallback, useEffect } from 'react';
 import * as fetcher from '../../apis/Fetcher';
 import { projectListFilterState, projectListState } from '../../recoil/projectList';
-import { useRecoilState } from 'recoil';
+import { useRecoilState, useResetRecoilState } from 'recoil';
 import useDebounce from '../useDebounce';
 
 const scrollToTop = () => {
@@ -12,10 +12,17 @@ function useProjectList() {
   const debounce = useDebounce();
 
   const [projectList, setProjectList] = useRecoilState(projectListState);
-
   const [projectListFilter, setProjectListFilter] = useRecoilState(projectListFilterState);
 
+  const resetProjectList = useResetRecoilState(projectListState);
+  const resetProjectFilter = useResetRecoilState(projectListFilterState);
+
   const { selectedCategory, searchKeyword, recruitingMode } = projectListFilter;
+
+  const resetState = () => {
+    resetProjectList();
+    resetProjectFilter();
+  };
 
   const getProjectList = useCallback(
     async (
@@ -30,7 +37,7 @@ function useProjectList() {
         setProjectList({
           data: pagenatedProjects,
           page: { moreData: page < pageSize, currentPage: page, size: pageSize },
-          load: { isLoading: false, isError: false },
+          load: { isFirstFetched: true, isLoading: false, isError: false },
         });
       } catch (e) {
         setProjectList((prev) => ({
@@ -44,8 +51,10 @@ function useProjectList() {
   );
 
   useEffect(() => {
-    getProjectList();
-  }, [getProjectList]);
+    if (!projectList.load.isFirstFetched) {
+      getProjectList();
+    }
+  }, [getProjectList, projectList.load.isFirstFetched]);
 
   const getNextProjectList = useCallback(async () => {
     const nextPage = projectList.page.currentPage + 1;
@@ -68,7 +77,7 @@ function useProjectList() {
           currentPage: nextPage,
           size: pageSize,
         },
-        load: { isLoading: false, isError: false },
+        load: { ...prev.load, isLoading: false, isError: false },
       }));
     } catch (e) {
       setProjectList((prev) => ({
@@ -90,7 +99,7 @@ function useProjectList() {
       selectedCategory: cate,
       searchKeyword: '',
     }));
-    getProjectList(selectedCategory, recruitingMode, searchKeyword);
+    getProjectList(cate, recruitingMode, '');
     scrollToTop();
   };
 
@@ -101,7 +110,7 @@ function useProjectList() {
       searchKeyword: searchKeyword,
     }));
     debounce(() => {
-      getProjectList(undefined, recruitingMode, searchKeyword);
+      getProjectList('all', recruitingMode, searchKeyword);
       scrollToTop();
     }, 500);
   };
@@ -123,6 +132,7 @@ function useProjectList() {
     handleCategoryClick,
     handleSearchChange,
     handleRecruitingSelect,
+    resetState,
   };
 }
 
