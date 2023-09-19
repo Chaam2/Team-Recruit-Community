@@ -20,7 +20,7 @@ import {
 } from '../../recoil/projectState';
 import { loginAtom } from '../../recoil/loginState';
 
-import { base64imgSrcParser, base64sToFiles, findBase64 } from '../../utils/base64Utils';
+import { base64toImgSrcConverter, base64sToFiles, findBase64 } from '../../utils/imageConverter';
 import imageCompression from 'browser-image-compression';
 
 const IMG_DOMAIN = process.env.REACT_APP_DOMAIN;
@@ -114,7 +114,7 @@ function ProjectPreview() {
       const urls = imgFiles.map((file) => `${IMG_DOMAIN}/static/project/${file.name}`);
 
       // base64 => 에디터 이미지 서버 경로로 대체
-      const newIntroduction = base64imgSrcParser(project.project_introduction, urls);
+      const newIntroduction = base64toImgSrcConverter(project.project_introduction, urls);
 
       // 에디터 이미지를 Blob으로 압축
       const compressingEditorImgsBlob =
@@ -193,7 +193,7 @@ function ProjectPreview() {
         `${new Date().getTime()}`
       );
       const urls = imgFiles.map((file) => `${IMG_DOMAIN}/static/project/${file.name}`);
-      const newIntroduction = base64imgSrcParser(project.project_introduction, urls);
+      const newIntroduction = base64toImgSrcConverter(project.project_introduction, urls);
 
       // 에디터 이미지를 Blob으로 압축
       const compressingEditorImgsBlob =
