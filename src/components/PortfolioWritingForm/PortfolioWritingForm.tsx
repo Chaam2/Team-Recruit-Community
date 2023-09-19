@@ -38,20 +38,35 @@ interface PortfolioWritingProps {
   publishedPostData?: TypePortfolioDetail;
 }
 
+interface IForm {
+  title: string;
+  summary: string;
+  stacks: string[];
+  members: TypeTeamProjectUser[];
+  thumbnailSrc: string;
+  thumbnailFile: File | null;
+  gitHubUrl: string;
+}
+
 function PortfolioWriting({ editMode, publishedPostData }: PortfolioWritingProps) {
   const isMobile = useMediaQuery({ query: '(max-width:768px)' });
   const navigate = useNavigate();
   const loginData = useRecoilValue(loginAtom);
   const [selectedProject, setSelectedProject] = useRecoilState(selectedPostTitleState);
 
-  const [title, setTitle] = useState('');
-  const [summary, setSummary] = useState('');
-  const [stacks, setStacks] = useState<string[]>([]);
-  const [members, setMembers] = useState<TypeTeamProjectUser[]>([]);
+  const [form, setForm] = useState<IForm>({
+    title: '',
+    summary: '',
+    stacks: [],
+    members: [],
+    thumbnailSrc: '',
+    thumbnailFile: null,
+    gitHubUrl: '',
+  });
+
+  const { title, summary, stacks, members, thumbnailSrc, thumbnailFile, gitHubUrl } = form;
+
   const [isPostSaved, setIsPostSaved] = useState<boolean>(false);
-  const [thumbnailSrc, setThumbnailSrc] = useState<string>('');
-  const [thumbnailFile, setThumbnailFile] = useState<File | null>(null);
-  const [gitHubUrl, setGitHubUrl] = useState('');
   const [isCompletePost, setIsCompletePost] = useState(false);
 
   const quillRef = useRef<Quill | null>(null);
@@ -99,7 +114,7 @@ function PortfolioWriting({ editMode, publishedPostData }: PortfolioWritingProps
     if (thumbnailFile) {
       const reader = new FileReader();
       reader.onload = () => {
-        setThumbnailSrc(reader.result as string);
+        setForm((prev) => ({ ...prev, thumbnailSrc: reader.result as string }));
       };
       reader.readAsDataURL(thumbnailFile);
     }
@@ -109,25 +124,29 @@ function PortfolioWriting({ editMode, publishedPostData }: PortfolioWritingProps
   useEffect(() => {
     if (publishedPostData) {
       const {
-        project_id,
-        portfolio_title,
-        portfolio_summary,
-        portfolio_stacks,
-        participated_members,
-        portfolio_description,
-        portfolio_github,
-        portfolio_thumbnail,
+        project_id: id,
+        portfolio_title: title,
+        portfolio_summary: summary,
+        portfolio_stacks: { stackList: stacks },
+        participated_members: members,
+        portfolio_description: description,
+        portfolio_github: gitHubUrl,
+        portfolio_thumbnail: thumbnailSrc,
       } = publishedPostData;
-      setSelectedProject({ id: project_id || 0, title: `${project_id}번째 모집 글` });
-      setTitle(portfolio_title);
-      setSummary(portfolio_summary);
-      setStacks(portfolio_stacks.stackList);
-      setMembers(participated_members);
-      setThumbnailSrc(portfolio_thumbnail);
-      setGitHubUrl(portfolio_github);
-      quillRef.current!.root.innerHTML = portfolio_description;
+      setSelectedProject({ id: id || 0, title: `${id}번째 모집 글` });
+      const newFormData = {
+        title,
+        summary,
+        stacks,
+        members,
+        thumbnailSrc,
+        thumbnailFile: null,
+        gitHubUrl,
+      };
+      setForm(newFormData);
+      quillRef.current!.root.innerHTML = description;
     }
-  }, [publishedPostData]);
+  }, [publishedPostData, setSelectedProject]);
 
   const location = useLocation();
   const searchParams = new URLSearchParams(location.search);
@@ -141,12 +160,12 @@ function PortfolioWriting({ editMode, publishedPostData }: PortfolioWritingProps
 
     !isMobile && titleRef.current?.focus();
 
-    // 작성 들어오면 선택한 모집글 초기화
-    const isModifyPath = location.pathname.includes('modify');
-    !isModifyPath && setSelectedProject({ id: 0, title: '' });
-
     // 파라미터가 있는 경우
     if (paramValue) {
+      // 작성 들어오면 선택한 모집글 초기화
+      const isModifyPath = location.pathname.includes('modify');
+      !isModifyPath && setSelectedProject({ id: 0, title: '' });
+
       const getCompletedProjectList = async () => {
         try {
           const { data } = await Fetcher.getCompletedProject();
@@ -169,7 +188,7 @@ function PortfolioWriting({ editMode, publishedPostData }: PortfolioWritingProps
 
       getCompletedProjectList();
     }
-  }, []);
+  }, [isMobile, location.pathname, navigate, paramValue, setSelectedProject]);
 
   // post패치
   const postData = async (formData: FormData) => {
@@ -200,29 +219,29 @@ function PortfolioWriting({ editMode, publishedPostData }: PortfolioWritingProps
   };
 
   const handleThumbnailSelect = (file: File) => {
-    setThumbnailFile(file);
+    setForm((prev) => ({ ...prev, thumbnailFile: file }));
   };
 
   const handleTitleChange = (value: string) => {
     if (value.length <= MAX_TITLE_LENGTH) {
-      setTitle(value);
+      setForm((prev) => ({ ...prev, title: value }));
     }
   };
 
   const handleSummaryChange = (value: string) => {
     if (value.length <= MAX_SUMMARY_LENGTH) {
-      setSummary(value);
+      setForm((prev) => ({ ...prev, summary: value }));
     }
   };
 
   const handleGitHubUrlChange = (value: string) => {
     if (value.length <= MAX_GITHUB_LENGTH) {
-      setGitHubUrl(value);
+      setForm((prev) => ({ ...prev, gitHubUrl: value }));
     }
   };
 
   const handleStackSelect = (stacks: string[]) => {
-    setStacks(stacks);
+    setForm((prev) => ({ ...prev, stacks }));
   };
 
   const handleUserSelect = (userData: TypeTeamProjectUser): void => {
@@ -230,12 +249,13 @@ function PortfolioWriting({ editMode, publishedPostData }: PortfolioWritingProps
       members.length < MAX_MEMBERS_LENGTH &&
       !members.some((user) => user.user_id === userData.user_id)
     ) {
-      setMembers((current) => [...current, userData]);
+      setForm((prev) => ({ ...prev, members: [...prev.members, userData] }));
     }
   };
 
   const handleUserUnselect = (userId: number) => {
-    setMembers((prev) => prev.filter((user) => user.user_id !== userId));
+    const newMembers = members.filter((user) => user.user_id !== userId);
+    setForm((prev) => ({ ...prev, members: newMembers }));
   };
 
   const handleSubmitClick = async () => {
@@ -397,13 +417,7 @@ function PortfolioWriting({ editMode, publishedPostData }: PortfolioWritingProps
 
     if (confirm) {
       setSelectedProject(postData.selectedProject);
-      setThumbnailSrc(postData.thumbnailSrc);
-      setThumbnailFile(null);
-      setTitle(postData.title);
-      setSummary(postData.summary);
-      setStacks(postData.stacks);
-      setGitHubUrl(postData.gitHubUrl);
-      setMembers(postData.members);
+      setForm(postData);
       // 에디터 내용 불러오기
       quillRef.current!.root.innerHTML = postData.description;
     }
