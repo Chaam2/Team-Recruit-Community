@@ -234,8 +234,8 @@ function usePortfolioWriting(publishedPostData?: TypePortfolioDetail) {
 
       const { parsedContent: parsedDesContent, convertedFiles: convertedDesFiles } =
         await contentWBase64Converter(loginData, editorHTML, IMG_DOMAIN, {
-          maxSizeMB: 150,
-          maxWidthOrHeight: 780,
+          maxSizeMB: 0.2,
+          maxWidthOrHeight: 1160,
           useWebWorker: true,
         });
 
@@ -244,8 +244,8 @@ function usePortfolioWriting(publishedPostData?: TypePortfolioDetail) {
         thumbnailSrc,
         IMG_DOMAIN,
         {
-          maxSizeMB: 150,
-          maxWidthOrHeight: 780,
+          maxSizeMB: 0.2,
+          maxWidthOrHeight: 1160,
           useWebWorker: true,
         }
       );
